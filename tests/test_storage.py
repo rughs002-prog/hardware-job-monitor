@@ -46,14 +46,23 @@ def test_pending_email_rejects_software_titles_and_deduplicates_locale_variants(
     store.upsert(Job(company="A", title="Software Development Student", url="https://a/1",
                      external_id="1", location="Israel", tags=["board-hardware", "student"]))
     store.upsert(Job(company="Apple", title="Hardware Engineering Student", url="https://a/2",
-                     external_id="2", location="Israel", tags=["board-hardware", "student"]))
+                     external_id="200621091-1451", location="Israel", tags=["board-hardware", "student"]))
     store.upsert(Job(company="Apple", title="Hardware Engineering Student", url="https://a/3",
-                     external_id="3", location="Israel", tags=["board-hardware", "student"]))
+                     external_id="200621091-0865", location="Israel", tags=["board-hardware", "student"]))
     assert [row["title"] for row in store.pending()] == ["Hardware Engineering Student"]
     store.mark_notified([store.pending()[0]["fingerprint"]])
     assert store.db.execute("SELECT COUNT(*) FROM jobs WHERE notified_at IS NULL").fetchone()[0] == 1
     # The only unnotified row is the deliberately excluded software position.
     assert store.pending() == []
+    store.close()
+
+
+def test_same_title_and_location_with_different_ids_remains_distinct(tmp_path):
+    store = Store(str(tmp_path / "jobs.db"))
+    for external_id in ("job-1", "job-2"):
+        store.upsert(Job(company="Amazon", title="Chip Design Student", url=f"https://a/{external_id}",
+                         external_id=external_id, location="Haifa, Israel", tags=["chip-design", "student"]))
+    assert len(store.pending()) == 2
     store.close()
 
 

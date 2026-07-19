@@ -43,29 +43,6 @@ class Store:
         self.db = sqlite3.connect(path)
         self.db.row_factory = sqlite3.Row
         self.db.executescript(SCHEMA)
-        self._propagate_duplicate_notifications()
-
-    def _propagate_duplicate_notifications(self) -> None:
-        """Mark locale variants notified when an identical posting was already sent."""
-        self.db.execute("""
-            UPDATE jobs AS duplicate
-            SET notified_at = (
-                SELECT MAX(sent.notified_at) FROM jobs AS sent
-                WHERE sent.company = duplicate.company
-                  AND lower(sent.title) = lower(duplicate.title)
-                  AND lower(COALESCE(sent.location, '')) = lower(COALESCE(duplicate.location, ''))
-                  AND sent.notified_at IS NOT NULL
-            )
-            WHERE duplicate.notified_at IS NULL
-              AND EXISTS (
-                SELECT 1 FROM jobs AS sent
-                WHERE sent.company = duplicate.company
-                  AND lower(sent.title) = lower(duplicate.title)
-                  AND lower(COALESCE(sent.location, '')) = lower(COALESCE(duplicate.location, ''))
-                  AND sent.notified_at IS NOT NULL
-              )
-        """)
-        self.db.commit()
 
     def close(self) -> None:
         self.db.close()
@@ -104,8 +81,10 @@ class Store:
                 continue
             if not ALERT_ROLE_TAGS.intersection(tags):
                 continue
-            # Some official sites expose locale variants of the same requisition.
-            dedupe_key = (row["company"].lower(), title, (row["location"] or "").lower())
+            external_id = row["external_id"] or row["url"]
+            if row["company"] == "Apple":
+                external_id = external_id.split("-", 1)[0]
+            dedupe_key = (row["company"].lower(), external_id)
             if dedupe_key in seen:
                 continue
             seen.add(dedupe_key)
@@ -116,8 +95,18 @@ class Store:
         if not fingerprints:
             return
         now = datetime.now(timezone.utc).isoformat()
+        selected = list(self.db.execute(
+            f"SELECT company, external_id FROM jobs WHERE fingerprint IN ({','.join('?' for _ in fingerprints)})",
+            fingerprints,
+        ))
         self.db.executemany("UPDATE jobs SET notified_at=? WHERE fingerprint=?", [(now, fp) for fp in fingerprints])
-        self._propagate_duplicate_notifications()
+        for row in selected:
+            if row["company"] == "Apple" and row["external_id"]:
+                base_id = row["external_id"].split("-", 1)[0]
+                self.db.execute(
+                    "UPDATE jobs SET notified_at=? WHERE company='Apple' AND external_id LIKE ?",
+                    (now, f"{base_id}-%"),
+                )
         self.db.commit()
 
     def scan_start(self, company: str) -> int:
