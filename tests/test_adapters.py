@@ -1,4 +1,4 @@
-from job_monitor.adapters import AmazonJobsAdapter, GoogleCareersHtmlAdapter, MobileyeHtmlAdapter, ValensHtmlAdapter, WorkdayAdapter, parse_official_job_links
+from job_monitor.adapters import AmazonJobsAdapter, ComeetAdapter, GoogleCareersHtmlAdapter, MobileyeHtmlAdapter, ValensHtmlAdapter, WorkdayAdapter, parse_official_job_links
 
 
 def test_parse_official_links_deduplicates_and_ignores_other_links():
@@ -95,3 +95,16 @@ def test_valens_adapter_reads_verified_location(monkeypatch):
     jobs = ValensHtmlAdapter().fetch(company)
     assert jobs[0].title == "Validation Student"
     assert jobs[0].location == "Valens HQ, Hod Hasharon, Israel"
+
+
+def test_comeet_adapter_reads_embedded_positions(monkeypatch):
+    data = [{"name": "Physical Design Student", "location": {"name": "Haifa", "country": "IL"},
+             "url_comeet_hosted_page": "https://www.comeet.com/jobs/example/A1/job/B2",
+             "time_updated": "2026-07-20T00:00:00Z", "details": {"description": "ASIC implementation"}}]
+    html = f"<script>COMPANY_POSITIONS_DATA = {__import__('json').dumps(data)};</script>"
+    monkeypatch.setattr("job_monitor.adapters.request_text", lambda _: html)
+    company = {"name": "Example", "source": {"board_url": "https://www.comeet.com/jobs/example/A1"}}
+    jobs = ComeetAdapter().fetch(company)
+    assert jobs[0].title == "Physical Design Student"
+    assert jobs[0].location == "Haifa, IL, Israel"
+    assert jobs[0].external_id == "B2"

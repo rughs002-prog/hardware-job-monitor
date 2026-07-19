@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from html import unescape
 from html.parser import HTMLParser
+import json
 import re
 from typing import Any
 from urllib.parse import urljoin
@@ -38,6 +39,34 @@ class LeverAdapter(Adapter):
                     location=(j.get("categories") or {}).get("location", ""),
                     description=plain(" ".join((j.get("descriptionPlain", ""), j.get("additionalPlain", "")))),
                     external_id=j["id"], source="lever", raw=j) for j in data]
+
+
+class ComeetAdapter(Adapter):
+    """Read the official Comeet company board's embedded position data."""
+
+    def fetch(self, company: dict[str, Any]) -> list[Job]:
+        src = company["source"]
+        html_text = request_text(src["board_url"])
+        marker = "COMPANY_POSITIONS_DATA = "
+        start = html_text.find(marker)
+        if start < 0:
+            raise ValueError("Comeet position data was not found")
+        data, _ = json.JSONDecoder().raw_decode(html_text[start + len(marker):].lstrip())
+        jobs = []
+        for j in data:
+            location_data = j.get("location") or {}
+            country = location_data.get("country", "")
+            location = ", ".join(filter(None, (location_data.get("name"), location_data.get("city"), country)))
+            if country.upper() == "IL" and "israel" not in location.lower():
+                location = f"{location}, Israel"
+            url = j.get("url_comeet_hosted_page") or j.get("url_active_page") or src["board_url"]
+            external_id = str(j.get("uid") or j.get("position_uid") or url.rstrip("/").rsplit("/", 1)[-1])
+            jobs.append(Job(
+                company=company["name"], title=j.get("name", ""), url=url, location=location,
+                description=plain(json.dumps(j.get("details") or j, ensure_ascii=False)),
+                external_id=external_id, posted_at=j.get("time_updated", ""), source="comeet", raw=j,
+            ))
+        return jobs
 
 
 class SmartRecruitersAdapter(Adapter):
@@ -241,6 +270,7 @@ class ValensHtmlAdapter(Adapter):
 
 
 ADAPTERS: dict[str, type[Adapter]] = {
+    "comeet": ComeetAdapter,
     "amazon-jobs": AmazonJobsAdapter,
     "greenhouse": GreenhouseAdapter,
     "lever": LeverAdapter,

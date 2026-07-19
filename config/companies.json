@@ -21,12 +21,12 @@
     {"name":"Texas Instruments","tier":2,"enabled":false,"status":"pending official connector","careers_url":"https://careers.ti.com/"},
     {"name":"NXP","tier":2,"enabled":true,"source":{"type":"workday","base_url":"https://nxp.wd3.myworkdayjobs.com","tenant":"nxp","site":"careers","max_results":2000}},
     {"name":"Sony Semiconductor Israel","tier":2,"enabled":false,"status":"pending official connector","careers_url":"https://www.sony-semicon.com/en/jobs/"},
-    {"name":"Hailo","tier":2,"enabled":false,"status":"Greenhouse token returned 404 on 2026-07-19; re-verify official ATS","careers_url":"https://hailo.ai/company-overview/careers/"},
-    {"name":"proteanTecs","tier":2,"enabled":false,"status":"Greenhouse token returned 404 on 2026-07-19; re-verify official ATS","careers_url":"https://www.proteantecs.com/company/careers/"},
-    {"name":"CEVA","tier":2,"enabled":false,"status":"pending official connector","careers_url":"https://www.ceva-ip.com/careers/"},
+    {"name":"Hailo","tier":2,"enabled":true,"source":{"type":"comeet","board_url":"https://www.comeet.com/jobs/hailo/D5.007"}},
+    {"name":"proteanTecs","tier":2,"enabled":true,"source":{"type":"comeet","board_url":"https://www.comeet.com/jobs/proteantecs/D5.00E"}},
+    {"name":"CEVA","tier":2,"enabled":true,"source":{"type":"comeet","board_url":"https://www.comeet.com/jobs/ceva/76.005"}},
     {"name":"Valens Semiconductor","tier":2,"enabled":true,"source":{"type":"valens-html","base_url":"https://www.valens.com","search_url":"https://www.valens.com/careers/"}},
     {"name":"Autotalks","tier":2,"enabled":false,"status":"pending official connector","careers_url":"https://www.autotalks.com/careers/"},
-    {"name":"SolarEdge","tier":2,"enabled":false,"status":"pending official connector","careers_url":"https://www.solaredge.com/corporate/careers"},
+    {"name":"SolarEdge","tier":2,"enabled":true,"source":{"type":"comeet","board_url":"https://www.comeet.com/jobs/SolarEdge/71.00A"}},
     {"name":"Western Digital / SanDisk","tier":2,"enabled":true,"source":{"type":"smartrecruiters","company_slug":"WesternDigital"}}
   ]
 }
