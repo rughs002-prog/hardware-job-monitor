@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from .models import Job
@@ -26,6 +26,13 @@ CREATE INDEX IF NOT EXISTS idx_jobs_notified ON jobs(notified_at, first_seen_at)
 CREATE TABLE IF NOT EXISTS scan_runs (
  id INTEGER PRIMARY KEY AUTOINCREMENT, started_at TEXT NOT NULL, finished_at TEXT,
  company TEXT NOT NULL, status TEXT NOT NULL, found_count INTEGER DEFAULT 0, error TEXT
+);
+CREATE TABLE IF NOT EXISTS source_items (
+ company TEXT NOT NULL, external_id TEXT NOT NULL, last_seen_at TEXT NOT NULL,
+ PRIMARY KEY(company, external_id)
+);
+CREATE TABLE IF NOT EXISTS source_state (
+ company TEXT PRIMARY KEY, last_full_scan_at TEXT NOT NULL
 );
 """
 
@@ -118,6 +125,35 @@ class Store:
         cur = self.db.execute("INSERT INTO scan_runs(started_at,company,status) VALUES(?,?,'running')", (now, company))
         self.db.commit()
         return int(cur.lastrowid)
+
+    def source_ids(self, company: str) -> set[str]:
+        return {row[0] for row in self.db.execute(
+            "SELECT external_id FROM source_items WHERE company=?", (company,)
+        )}
+
+    def remember_source_items(self, company: str, jobs: list[Job]) -> None:
+        now = datetime.now(timezone.utc).isoformat()
+        values = [(company, job.external_id, now) for job in jobs if job.external_id]
+        self.db.executemany("""
+            INSERT INTO source_items(company, external_id, last_seen_at) VALUES(?,?,?)
+            ON CONFLICT(company, external_id) DO UPDATE SET last_seen_at=excluded.last_seen_at
+        """, values)
+        self.db.commit()
+
+    def full_scan_due(self, company: str, interval_hours: int = 24) -> bool:
+        row = self.db.execute("SELECT last_full_scan_at FROM source_state WHERE company=?", (company,)).fetchone()
+        if row is None:
+            return True
+        last = datetime.fromisoformat(row[0])
+        return datetime.now(timezone.utc) - last >= timedelta(hours=interval_hours)
+
+    def mark_full_scan(self, company: str) -> None:
+        now = datetime.now(timezone.utc).isoformat()
+        self.db.execute("""
+            INSERT INTO source_state(company, last_full_scan_at) VALUES(?,?)
+            ON CONFLICT(company) DO UPDATE SET last_full_scan_at=excluded.last_full_scan_at
+        """, (company, now))
+        self.db.commit()
 
     def scan_finish(self, run_id: int, status: str, count: int = 0, error: str = "") -> None:
         now = datetime.now(timezone.utc).isoformat()

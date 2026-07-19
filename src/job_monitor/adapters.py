@@ -94,18 +94,30 @@ class WorkdayAdapter(Adapter):
         src = company["source"]
         base = src["base_url"].rstrip("/")
         endpoint = f"{base}/wday/cxs/{src['tenant']}/{src['site']}/jobs"
-        offset, jobs, total = 0, [], None
+        known = set(company.get("_known_external_ids", ()))
+        incremental = bool(company.get("_incremental") and known)
+        stop_after_known_pages = int(src.get("stop_after_known_pages", 3))
+        offset, jobs, total, known_page_streak = 0, [], None, 0
         while True:
             data = request_json(endpoint, payload={"appliedFacets": {}, "limit": 20, "offset": offset, "searchText": ""})
             if total is None:
                 total = int(data.get("total", 0))
             batch = data.get("jobPostings", [])
+            batch_ids = []
             for j in batch:
                 path = j.get("externalPath", "")
+                external_id = path or j.get("bulletFields", [""])[0]
+                batch_ids.append(external_id)
                 jobs.append(Job(company=company["name"], title=j.get("title", ""), url=f"{base}/en-US/{src['site']}{path}",
-                                location=j.get("locationsText", ""), external_id=path or j.get("bulletFields", [""])[0],
+                                location=j.get("locationsText", ""), external_id=external_id,
                                 posted_at=j.get("postedOn", ""), source="workday", raw=j))
             offset += len(batch)
+            if incremental and batch_ids and all(item_id in known for item_id in batch_ids):
+                known_page_streak += 1
+            else:
+                known_page_streak = 0
+            if incremental and known_page_streak >= stop_after_known_pages:
+                return jobs
             if not batch or offset >= total or offset >= src.get("max_results", 1000):
                 return jobs
 

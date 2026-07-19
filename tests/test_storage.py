@@ -55,3 +55,14 @@ def test_pending_email_rejects_software_titles_and_deduplicates_locale_variants(
     # The only unnotified row is the deliberately excluded software position.
     assert store.pending() == []
     store.close()
+
+
+def test_source_history_enables_incremental_scans(tmp_path):
+    store = Store(str(tmp_path / "jobs.db"))
+    jobs = [Job(company="A", title="RTL Student", url="https://a/1", external_id="1")]
+    assert store.full_scan_due("A") is True
+    store.remember_source_items("A", jobs)
+    store.mark_full_scan("A")
+    assert store.source_ids("A") == {"1"}
+    assert store.full_scan_due("A") is False
+    store.close()

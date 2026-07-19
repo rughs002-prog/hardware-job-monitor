@@ -66,3 +66,21 @@ def test_workday_keeps_first_page_total_when_later_pages_report_zero(monkeypatch
     jobs = WorkdayAdapter().fetch(company)
     assert calls == [0, 2]
     assert len(jobs) == 3
+
+
+def test_workday_incremental_stops_after_known_pages(monkeypatch):
+    calls = []
+
+    def fake_request(_url, payload):
+        offset = payload["offset"]
+        calls.append(offset)
+        ids = [f"/job/{offset + n}" for n in range(20)]
+        return {"total": 200, "jobPostings": [{"title": "Engineer", "externalPath": item} for item in ids]}
+
+    monkeypatch.setattr("job_monitor.adapters.request_json", fake_request)
+    known = {f"/job/{n}" for n in range(100)}
+    company = {"name": "Example", "_incremental": True, "_known_external_ids": known,
+               "source": {"base_url": "https://example.wd1.myworkdayjobs.com", "tenant": "example",
+                          "site": "Careers", "stop_after_known_pages": 3}}
+    assert len(WorkdayAdapter().fetch(company)) == 60
+    assert calls == [0, 20, 40]

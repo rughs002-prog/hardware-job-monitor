@@ -5,11 +5,12 @@ This project monitors **official company career sources** for Israel-based hardw
 ## What is implemented
 
 - Official ATS adapters for Greenhouse, Lever, SmartRecruiters, and Workday, plus a conservative official-HTML adapter.
-- A 27-company Israel hardware catalog. NVIDIA was live-tested; Apple, Qualcomm, and Marvell now have configured official sources.
+- A 27-company Israel hardware catalog with 14 live-tested official sources.
 - Broad role tags: chip/ASIC/SoC, physical design, RTL/digital design, verification, validation, FPGA, firmware, embedded, analog/mixed-signal/RF, DFT, CAD/EDA, and board hardware.
 - Level tags: Student, Intern/Internship/Co-op, Working Student, Junior, Entry Level, Graduate, and University variants.
 - Conservative Israel-location matching.
 - SQLite history, stable deduplication, first/last-seen timestamps, and scan audit records.
+- Incremental Workday scans remember every source posting and stop after three fully-known pages. A full safety scan runs once every 24 hours.
 - Email alerts are restricted to Student and Intern/Internship/Co-op roles. Other hardware jobs may be retained in history but are never included in notifications.
 - HTML email digest preview and SMTP delivery.
 - Source isolation: one broken company endpoint does not stop the rest of the scan.
@@ -22,7 +23,7 @@ Official ATS/API -> source adapter -> normalize Job -> Israel + broad hardware t
        -> SQLite upsert/deduplicate -> pending new jobs -> email digest
 ```
 
-The catalog is deliberately honest about coverage. `enabled: true` means a source has a configured official connector. NVIDIA's Workday connector was live-tested on 2026-07-19. Apple, Qualcomm, and Marvell have current official endpoints configured; the remaining companies stay disabled until their endpoint is verified. Amazon's official Israel search page was inspected, but remains disabled because its results require a dedicated dynamic connector. This avoids broad or third-party scraping and makes incremental expansion safe.
+The catalog is deliberately honest about coverage. `enabled: true` means the official source was verified. Sources that block automation or do not expose a stable listing remain disabled instead of being reported as covered.
 
 ## Quick start (Windows PowerShell)
 
@@ -38,7 +39,7 @@ job-monitor scan
 job-monitor preview-email
 ```
 
-The first scan creates `data/jobs.db`. A second scan updates `last_seen_at` but does not create duplicate notifications.
+The first scan creates `data/jobs.db` and records every source posting. Later scans use that history to stop early; once every 24 hours the monitor performs a complete safety scan.
 
 ## Email credentials (provide later)
 

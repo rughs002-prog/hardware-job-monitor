@@ -30,12 +30,21 @@ def scan(store: Store, config_path: str) -> int:
             continue
         run_id = store.scan_start(company["name"])
         try:
+            company = dict(company)
+            known_ids = store.source_ids(company["name"])
+            full_scan = not known_ids or store.full_scan_due(company["name"])
+            company["_known_external_ids"] = known_ids
+            company["_incremental"] = not full_scan
             adapter = ADAPTERS[company["source"]["type"]]()
             jobs = [tag_job(job) for job in adapter.fetch(company)]
+            store.remember_source_items(company["name"], jobs)
+            if full_scan:
+                store.mark_full_scan(company["name"])
             relevant = [job for job in jobs if is_relevant(job)]
             new_count += sum(store.upsert(job) for job in relevant)
             store.scan_finish(run_id, "ok", len(relevant))
-            print(f"OK  {company['name']}: {len(relevant)} relevant of {len(jobs)} fetched")
+            mode = "full" if full_scan else "incremental"
+            print(f"OK  {company['name']}: {len(relevant)} relevant of {len(jobs)} fetched ({mode})")
         except Exception as exc:  # isolate source failures
             store.scan_finish(run_id, "error", error=str(exc))
             print(f"ERR {company['name']}: {exc}")
