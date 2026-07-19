@@ -1,0 +1,19 @@
+[project]
+name = "hardware-job-monitor"
+version = "0.1.0"
+description = "Monitor official career sites for Israel-based student and early-career hardware roles"
+requires-python = ">=3.11"
+
+[project.scripts]
+job-monitor = "job_monitor.cli:main"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]

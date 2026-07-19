@@ -1,0 +1,65 @@
+name: Hardware student job monitor
+
+on:
+  workflow_dispatch:
+  schedule:
+    # GitHub cron uses UTC. Runs at 02:17, 08:17, 14:17 and 20:17 UTC.
+    - cron: "17 2,8,14,20 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: hardware-job-monitor
+  cancel-in-progress: false
+
+jobs:
+  scan-and-notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      PYTHONPATH: src
+      JOB_DB_PATH: data/jobs.db
+      COMPANIES_FILE: config/companies.json
+      HTTP_TIMEOUT_SECONDS: "35"
+      USER_AGENT: "HardwareJobMonitor/0.1 (personal job alerts; contact: rughs002@gmail.com)"
+      SMTP_HOST: smtp.gmail.com
+      SMTP_PORT: "587"
+      SMTP_USERNAME: rughs002@gmail.com
+      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+      EMAIL_FROM: rughs002@gmail.com
+      EMAIL_TO: rughs002@gmail.com
+      SMTP_STARTTLS: "true"
+
+    steps:
+      - name: Check out monitor and saved job history
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Verify required secret exists
+        shell: bash
+        run: |
+          if [ -z "$SMTP_PASSWORD" ]; then
+            echo "Repository secret SMTP_PASSWORD is missing."
+            exit 1
+          fi
+
+      - name: Scan official sources and send new student/intern jobs
+        run: python -m job_monitor.cli run
+
+      - name: Save deduplication history
+        shell: bash
+        run: |
+          git config user.name "hardware-job-monitor"
+          git config user.email "hardware-job-monitor@users.noreply.github.com"
+          git add -f data/jobs.db
+          if git diff --cached --quiet; then
+            echo "Job history unchanged."
+          else
+            git commit -m "Update monitored job history"
+            git push
+          fi

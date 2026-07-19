@@ -1,0 +1,32 @@
+{
+  "_comment": "MVP catalog. enabled=true means the ATS connector is configured. Entries marked pending remain in scope but are not silently scraped until their official endpoint is verified.",
+  "companies": [
+    {"name":"NVIDIA","tier":1,"enabled":true,"source":{"type":"workday","base_url":"https://nvidia.wd5.myworkdayjobs.com","tenant":"nvidia","site":"NVIDIAExternalCareerSite","max_results":2000}},
+    {"name":"Intel","tier":1,"enabled":false,"status":"pending official connector","careers_url":"https://jobs.intel.com/"},
+    {"name":"Apple","tier":1,"enabled":true,"source":{"type":"official-html","base_url":"https://jobs.apple.com","page_url_template":"https://jobs.apple.com/en-il/search?location=israel-ISR&page={page}","max_pages":7,"href_pattern":"/en-il/details/[0-9]+-[0-9]+/","id_pattern":"/details/([0-9]+-[0-9]+)/","location":"Israel"}},
+    {"name":"Amazon / Annapurna Labs","tier":1,"enabled":false,"status":"official Israel results load dynamically; dedicated connector still required","careers_url":"https://www.amazon.jobs/en/search?base_query=&loc_query=Israel"},
+    {"name":"Google","tier":1,"enabled":false,"status":"pending official connector","careers_url":"https://www.google.com/about/careers/applications/jobs/results/"},
+    {"name":"Microsoft","tier":1,"enabled":false,"status":"pending official connector","careers_url":"https://jobs.careers.microsoft.com/"},
+    {"name":"Qualcomm","tier":1,"enabled":false,"status":"Workday search returned zero results on 2026-07-19; current Eightfold connector required","careers_url":"https://careers.qualcomm.com/careers"},
+    {"name":"Mobileye","tier":1,"enabled":false,"status":"pending official connector","careers_url":"https://careers.mobileye.com/"},
+    {"name":"Marvell","tier":1,"enabled":true,"source":{"type":"workday","base_url":"https://marvell.wd1.myworkdayjobs.com","tenant":"marvell","site":"MarvellCareers","max_results":2000}},
+    {"name":"Broadcom","tier":1,"enabled":false,"status":"pending Workday endpoint verification","careers_url":"https://www.broadcom.com/company/careers"},
+    {"name":"Cadence","tier":1,"enabled":false,"status":"pending Workday endpoint verification","careers_url":"https://www.cadence.com/en_US/home/company/careers.html"},
+    {"name":"Synopsys","tier":1,"enabled":false,"status":"pending official connector","careers_url":"https://careers.synopsys.com/"},
+    {"name":"Cisco","tier":2,"enabled":false,"status":"pending official connector","careers_url":"https://jobs.cisco.com/"},
+    {"name":"Tower Semiconductor","tier":2,"enabled":false,"status":"pending official connector","careers_url":"https://www.towersemi.com/careers/"},
+    {"name":"KLA","tier":2,"enabled":false,"status":"pending Workday endpoint verification","careers_url":"https://www.kla.com/careers"},
+    {"name":"Applied Materials","tier":2,"enabled":false,"status":"pending Workday endpoint verification","careers_url":"https://www.appliedmaterials.com/us/en/careers.html"},
+    {"name":"Analog Devices","tier":2,"enabled":false,"status":"pending official connector","careers_url":"https://careers.analog.com/"},
+    {"name":"Texas Instruments","tier":2,"enabled":false,"status":"pending official connector","careers_url":"https://careers.ti.com/"},
+    {"name":"NXP","tier":2,"enabled":false,"status":"pending Workday endpoint verification","careers_url":"https://www.nxp.com/company/about-nxp/careers:CAREERS"},
+    {"name":"Sony Semiconductor Israel","tier":2,"enabled":false,"status":"pending official connector","careers_url":"https://www.sony-semicon.com/en/jobs/"},
+    {"name":"Hailo","tier":2,"enabled":false,"status":"Greenhouse token returned 404 on 2026-07-19; re-verify official ATS","careers_url":"https://hailo.ai/company-overview/careers/"},
+    {"name":"proteanTecs","tier":2,"enabled":false,"status":"Greenhouse token returned 404 on 2026-07-19; re-verify official ATS","careers_url":"https://www.proteantecs.com/company/careers/"},
+    {"name":"CEVA","tier":2,"enabled":false,"status":"pending official connector","careers_url":"https://www.ceva-ip.com/careers/"},
+    {"name":"Valens Semiconductor","tier":2,"enabled":false,"status":"pending official connector","careers_url":"https://www.valens.com/careers/"},
+    {"name":"Autotalks","tier":2,"enabled":false,"status":"pending official connector","careers_url":"https://www.autotalks.com/careers/"},
+    {"name":"SolarEdge","tier":2,"enabled":false,"status":"pending official connector","careers_url":"https://www.solaredge.com/corporate/careers"},
+    {"name":"Western Digital / SanDisk","tier":2,"enabled":false,"status":"pending SmartRecruiters/official endpoint verification","careers_url":"https://jobs.smartrecruiters.com/WesternDigital"}
+  ]
+}

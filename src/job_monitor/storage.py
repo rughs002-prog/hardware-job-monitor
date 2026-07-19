@@ -1,0 +1,80 @@
+from __future__ import annotations
+
+import json
+import sqlite3
+from datetime import datetime, timezone
+from pathlib import Path
+
+from .models import Job
+
+
+SCHEMA = """
+CREATE TABLE IF NOT EXISTS jobs (
+ fingerprint TEXT PRIMARY KEY, company TEXT NOT NULL, external_id TEXT, title TEXT NOT NULL,
+ url TEXT NOT NULL, location TEXT, description TEXT, posted_at TEXT, source TEXT,
+ tags_json TEXT NOT NULL, relevance_json TEXT NOT NULL, first_seen_at TEXT NOT NULL,
+ last_seen_at TEXT NOT NULL, notified_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_jobs_notified ON jobs(notified_at, first_seen_at);
+CREATE TABLE IF NOT EXISTS scan_runs (
+ id INTEGER PRIMARY KEY AUTOINCREMENT, started_at TEXT NOT NULL, finished_at TEXT,
+ company TEXT NOT NULL, status TEXT NOT NULL, found_count INTEGER DEFAULT 0, error TEXT
+);
+"""
+
+
+class Store:
+    def __init__(self, path: str):
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        self.db = sqlite3.connect(path)
+        self.db.row_factory = sqlite3.Row
+        self.db.executescript(SCHEMA)
+
+    def close(self) -> None:
+        self.db.close()
+
+    def __enter__(self) -> "Store":
+        return self
+
+    def __exit__(self, *_: object) -> None:
+        self.close()
+
+    def upsert(self, job: Job) -> bool:
+        now = datetime.now(timezone.utc).isoformat()
+        existing = self.db.execute("SELECT 1 FROM jobs WHERE fingerprint=?", (job.fingerprint,)).fetchone()
+        self.db.execute("""INSERT INTO jobs VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,NULL)
+            ON CONFLICT(fingerprint) DO UPDATE SET title=excluded.title, url=excluded.url,
+            location=excluded.location, description=excluded.description, posted_at=excluded.posted_at,
+            tags_json=excluded.tags_json, relevance_json=excluded.relevance_json,
+            last_seen_at=excluded.last_seen_at""",
+            (job.fingerprint, job.company, job.external_id, job.title, job.url, job.location,
+             job.description, job.posted_at, job.source, json.dumps(job.tags), json.dumps(job.relevance), now, now))
+        self.db.commit()
+        return existing is None
+
+    def pending(self) -> list[sqlite3.Row]:
+        return list(self.db.execute("""
+            SELECT * FROM jobs
+            WHERE notified_at IS NULL
+              AND (tags_json LIKE '%"student"%' OR tags_json LIKE '%"intern"%')
+            ORDER BY first_seen_at
+        """))
+
+    def mark_notified(self, fingerprints: list[str]) -> None:
+        if not fingerprints:
+            return
+        now = datetime.now(timezone.utc).isoformat()
+        self.db.executemany("UPDATE jobs SET notified_at=? WHERE fingerprint=?", [(now, fp) for fp in fingerprints])
+        self.db.commit()
+
+    def scan_start(self, company: str) -> int:
+        now = datetime.now(timezone.utc).isoformat()
+        cur = self.db.execute("INSERT INTO scan_runs(started_at,company,status) VALUES(?,?,'running')", (now, company))
+        self.db.commit()
+        return int(cur.lastrowid)
+
+    def scan_finish(self, run_id: int, status: str, count: int = 0, error: str = "") -> None:
+        now = datetime.now(timezone.utc).isoformat()
+        self.db.execute("UPDATE scan_runs SET finished_at=?,status=?,found_count=?,error=? WHERE id=?",
+                        (now, status, count, error, run_id))
+        self.db.commit()
