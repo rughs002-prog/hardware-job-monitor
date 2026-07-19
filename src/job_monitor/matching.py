@@ -17,7 +17,8 @@ ROLE_TAGS: dict[str, tuple[str, ...]] = {
     "analog-mixed-signal": ("analog", "mixed signal", "mixed-signal", "ams", "rf", "serdes"),
     "cad-eda": ("cad engineer", "eda", "design automation", "vlsi cad"),
     "dft": ("design for test", "dft", "scan insertion", "atpg"),
-    "board-hardware": ("board design", "pcb", "signal integrity", "hardware engineer", "electrical engineer"),
+    "board-hardware": ("board design", "pcb", "signal integrity", "hardware engineer", "hardware engineering",
+                       "electrical engineer", "electrical engineering", "motion control", "electronics"),
 }
 
 LEVEL_TAGS: dict[str, tuple[str, ...]] = {

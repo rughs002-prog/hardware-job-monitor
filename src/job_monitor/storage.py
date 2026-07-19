@@ -8,6 +8,13 @@ from pathlib import Path
 from .models import Job
 
 
+ALERT_ROLE_TAGS = {
+    "chip-design", "physical-design", "rtl", "verification", "validation", "fpga",
+    "analog-mixed-signal", "cad-eda", "dft", "board-hardware",
+}
+SOFTWARE_TITLE_TERMS = ("software", "firmware", "embedded", "devops", "algorithm", "data scientist", "applied scientist")
+
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS jobs (
  fingerprint TEXT PRIMARY KEY, company TEXT NOT NULL, external_id TEXT, title TEXT NOT NULL,
@@ -53,12 +60,27 @@ class Store:
         return existing is None
 
     def pending(self) -> list[sqlite3.Row]:
-        return list(self.db.execute("""
+        rows = self.db.execute("""
             SELECT * FROM jobs
             WHERE notified_at IS NULL
               AND (tags_json LIKE '%"student"%' OR tags_json LIKE '%"intern"%')
             ORDER BY first_seen_at
-        """))
+        """)
+        pending, seen = [], set()
+        for row in rows:
+            title = row["title"].lower()
+            tags = set(json.loads(row["tags_json"]))
+            if any(term in title for term in SOFTWARE_TITLE_TERMS):
+                continue
+            if not ALERT_ROLE_TAGS.intersection(tags):
+                continue
+            # Some official sites expose locale variants of the same requisition.
+            dedupe_key = (row["company"].lower(), title, (row["location"] or "").lower())
+            if dedupe_key in seen:
+                continue
+            seen.add(dedupe_key)
+            pending.append(row)
+        return pending
 
     def mark_notified(self, fingerprints: list[str]) -> None:
         if not fingerprints:
