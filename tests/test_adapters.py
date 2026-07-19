@@ -1,4 +1,4 @@
-from job_monitor.adapters import AmazonJobsAdapter, GoogleCareersHtmlAdapter, MobileyeHtmlAdapter, parse_official_job_links
+from job_monitor.adapters import AmazonJobsAdapter, GoogleCareersHtmlAdapter, MobileyeHtmlAdapter, WorkdayAdapter, parse_official_job_links
 
 
 def test_parse_official_links_deduplicates_and_ignores_other_links():
@@ -48,3 +48,21 @@ def test_google_adapter_reads_embedded_official_job_links(monkeypatch):
     jobs = GoogleCareersHtmlAdapter().fetch(company)
     assert jobs[0].title == "Hardware Engineering Intern"
     assert jobs[0].external_id == "123456"
+
+
+def test_workday_keeps_first_page_total_when_later_pages_report_zero(monkeypatch):
+    calls = []
+
+    def fake_request(_url, payload):
+        calls.append(payload["offset"])
+        if payload["offset"] == 0:
+            return {"total": 3, "jobPostings": [{"title": "RTL Intern", "externalPath": "/job/1"},
+                                                   {"title": "ASIC Student", "externalPath": "/job/2"}]}
+        return {"total": 0, "jobPostings": [{"title": "FPGA Intern", "externalPath": "/job/3"}]}
+
+    monkeypatch.setattr("job_monitor.adapters.request_json", fake_request)
+    company = {"name": "Example", "source": {"base_url": "https://example.wd1.myworkdayjobs.com",
+                                                  "tenant": "example", "site": "Careers"}}
+    jobs = WorkdayAdapter().fetch(company)
+    assert calls == [0, 2]
+    assert len(jobs) == 3

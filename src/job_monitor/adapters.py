@@ -94,9 +94,11 @@ class WorkdayAdapter(Adapter):
         src = company["source"]
         base = src["base_url"].rstrip("/")
         endpoint = f"{base}/wday/cxs/{src['tenant']}/{src['site']}/jobs"
-        offset, jobs = 0, []
+        offset, jobs, total = 0, [], None
         while True:
             data = request_json(endpoint, payload={"appliedFacets": {}, "limit": 20, "offset": offset, "searchText": ""})
+            if total is None:
+                total = int(data.get("total", 0))
             batch = data.get("jobPostings", [])
             for j in batch:
                 path = j.get("externalPath", "")
@@ -104,7 +106,7 @@ class WorkdayAdapter(Adapter):
                                 location=j.get("locationsText", ""), external_id=path or j.get("bulletFields", [""])[0],
                                 posted_at=j.get("postedOn", ""), source="workday", raw=j))
             offset += len(batch)
-            if not batch or offset >= data.get("total", 0) or offset >= src.get("max_results", 1000):
+            if not batch or offset >= total or offset >= src.get("max_results", 1000):
                 return jobs
 
 
