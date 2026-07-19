@@ -1,4 +1,4 @@
-from job_monitor.adapters import AmazonJobsAdapter, MobileyeHtmlAdapter, parse_official_job_links
+from job_monitor.adapters import AmazonJobsAdapter, GoogleCareersHtmlAdapter, MobileyeHtmlAdapter, parse_official_job_links
 
 
 def test_parse_official_links_deduplicates_and_ignores_other_links():
@@ -36,3 +36,15 @@ def test_mobileye_adapter_reads_embedded_official_job_links(monkeypatch):
     jobs = MobileyeHtmlAdapter().fetch(company)
     assert jobs[0].title == "Physical Design Student"
     assert jobs[0].external_id == "12345678-1234-1234-1234-123456789abc"
+
+
+def test_google_adapter_reads_embedded_official_job_links(monkeypatch):
+    html = '<script>"jobs/results/123456-hardware-engineering-intern?location=Israel"</script>'
+    monkeypatch.setattr("job_monitor.adapters.request_text", lambda _: html)
+    company = {"name": "Google", "source": {
+        "base_url": "https://www.google.com/about/careers/applications/",
+        "search_url": "https://www.google.com/about/careers/applications/jobs/results/?location=Israel",
+    }}
+    jobs = GoogleCareersHtmlAdapter().fetch(company)
+    assert jobs[0].title == "Hardware Engineering Intern"
+    assert jobs[0].external_id == "123456"

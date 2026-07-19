@@ -182,6 +182,26 @@ class MobileyeHtmlAdapter(Adapter):
         return list(jobs.values())
 
 
+class GoogleCareersHtmlAdapter(Adapter):
+    """Extract official Google Careers results embedded in the Israel results page."""
+
+    def fetch(self, company: dict[str, Any]) -> list[Job]:
+        src = company["source"]
+        html_text = request_text(src["search_url"])
+        pattern = re.compile(r"jobs/results/([0-9]+)-([^?\"'< ]+)")
+        jobs: dict[str, Job] = {}
+        for match in pattern.finditer(html_text):
+            external_id, slug = match.groups()
+            title = plain(slug.replace("-", " ")).title()
+            path = f"jobs/results/{external_id}-{slug}"
+            jobs.setdefault(external_id, Job(
+                company=company["name"], title=title,
+                url=urljoin(src["base_url"], path), location="Israel",
+                external_id=external_id, source="official-html",
+            ))
+        return list(jobs.values())
+
+
 ADAPTERS: dict[str, type[Adapter]] = {
     "amazon-jobs": AmazonJobsAdapter,
     "greenhouse": GreenhouseAdapter,
@@ -190,4 +210,5 @@ ADAPTERS: dict[str, type[Adapter]] = {
     "workday": WorkdayAdapter,
     "official-html": OfficialHtmlAdapter,
     "mobileye-html": MobileyeHtmlAdapter,
+    "google-careers-html": GoogleCareersHtmlAdapter,
 }
