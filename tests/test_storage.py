@@ -50,4 +50,8 @@ def test_pending_email_rejects_software_titles_and_deduplicates_locale_variants(
     store.upsert(Job(company="Apple", title="Hardware Engineering Student", url="https://a/3",
                      external_id="3", location="Israel", tags=["board-hardware", "student"]))
     assert [row["title"] for row in store.pending()] == ["Hardware Engineering Student"]
+    store.mark_notified([store.pending()[0]["fingerprint"]])
+    assert store.db.execute("SELECT COUNT(*) FROM jobs WHERE notified_at IS NULL").fetchone()[0] == 1
+    # The only unnotified row is the deliberately excluded software position.
+    assert store.pending() == []
     store.close()

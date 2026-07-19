@@ -36,6 +36,29 @@ class Store:
         self.db = sqlite3.connect(path)
         self.db.row_factory = sqlite3.Row
         self.db.executescript(SCHEMA)
+        self._propagate_duplicate_notifications()
+
+    def _propagate_duplicate_notifications(self) -> None:
+        """Mark locale variants notified when an identical posting was already sent."""
+        self.db.execute("""
+            UPDATE jobs AS duplicate
+            SET notified_at = (
+                SELECT MAX(sent.notified_at) FROM jobs AS sent
+                WHERE sent.company = duplicate.company
+                  AND lower(sent.title) = lower(duplicate.title)
+                  AND lower(COALESCE(sent.location, '')) = lower(COALESCE(duplicate.location, ''))
+                  AND sent.notified_at IS NOT NULL
+            )
+            WHERE duplicate.notified_at IS NULL
+              AND EXISTS (
+                SELECT 1 FROM jobs AS sent
+                WHERE sent.company = duplicate.company
+                  AND lower(sent.title) = lower(duplicate.title)
+                  AND lower(COALESCE(sent.location, '')) = lower(COALESCE(duplicate.location, ''))
+                  AND sent.notified_at IS NOT NULL
+              )
+        """)
+        self.db.commit()
 
     def close(self) -> None:
         self.db.close()
@@ -87,6 +110,7 @@ class Store:
             return
         now = datetime.now(timezone.utc).isoformat()
         self.db.executemany("UPDATE jobs SET notified_at=? WHERE fingerprint=?", [(now, fp) for fp in fingerprints])
+        self._propagate_duplicate_notifications()
         self.db.commit()
 
     def scan_start(self, company: str) -> int:
