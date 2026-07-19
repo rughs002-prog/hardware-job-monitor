@@ -1,4 +1,4 @@
-from job_monitor.adapters import AmazonJobsAdapter, GoogleCareersHtmlAdapter, MobileyeHtmlAdapter, WorkdayAdapter, parse_official_job_links
+from job_monitor.adapters import AmazonJobsAdapter, GoogleCareersHtmlAdapter, MobileyeHtmlAdapter, ValensHtmlAdapter, WorkdayAdapter, parse_official_job_links
 
 
 def test_parse_official_links_deduplicates_and_ignores_other_links():
@@ -84,3 +84,14 @@ def test_workday_incremental_stops_after_known_pages(monkeypatch):
                           "site": "Careers", "stop_after_known_pages": 3}}
     assert len(WorkdayAdapter().fetch(company)) == 60
     assert calls == [0, 20, 40]
+
+
+def test_valens_adapter_reads_verified_location(monkeypatch):
+    listing = '<a href="https://www.valens.com/position/validation-student/">Validation Student</a>'
+    detail = '<div class="location"><span>Valens HQ, Hod Hasharon, Israel</span></div>'
+    monkeypatch.setattr("job_monitor.adapters.request_text", lambda url: detail if "/position/" in url else listing)
+    company = {"name": "Valens", "source": {"base_url": "https://www.valens.com",
+                                                "search_url": "https://www.valens.com/careers/"}}
+    jobs = ValensHtmlAdapter().fetch(company)
+    assert jobs[0].title == "Validation Student"
+    assert jobs[0].location == "Valens HQ, Hod Hasharon, Israel"

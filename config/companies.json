@@ -12,7 +12,7 @@
     {"name":"Marvell","tier":1,"enabled":true,"source":{"type":"workday","base_url":"https://marvell.wd1.myworkdayjobs.com","tenant":"marvell","site":"MarvellCareers","max_results":2000}},
     {"name":"Broadcom","tier":1,"enabled":true,"source":{"type":"workday","base_url":"https://broadcom.wd1.myworkdayjobs.com","tenant":"broadcom","site":"External_Career","max_results":2000}},
     {"name":"Cadence","tier":1,"enabled":true,"source":{"type":"workday","base_url":"https://cadence.wd1.myworkdayjobs.com","tenant":"cadence","site":"External_Careers","max_results":2000}},
-    {"name":"Synopsys","tier":1,"enabled":false,"status":"pending official connector","careers_url":"https://careers.synopsys.com/"},
+    {"name":"Synopsys","tier":1,"enabled":true,"source":{"type":"official-html","base_url":"https://careers.synopsys.com","search_urls":["https://careers.synopsys.com/location/israel-jobs/44408/294640/2"],"href_pattern":"/job/(raanana|haifa|herzliya|holon)/[^\\\"'< ]+/44408/[0-9]+","id_pattern":"/44408/([0-9]+)","location":"Israel"}},
     {"name":"Cisco","tier":2,"enabled":false,"status":"pending official connector","careers_url":"https://jobs.cisco.com/"},
     {"name":"Tower Semiconductor","tier":2,"enabled":false,"status":"pending official connector","careers_url":"https://www.towersemi.com/careers/"},
     {"name":"KLA","tier":2,"enabled":true,"source":{"type":"workday","base_url":"https://kla.wd1.myworkdayjobs.com","tenant":"kla","site":"Search","max_results":2000}},
@@ -24,7 +24,7 @@
     {"name":"Hailo","tier":2,"enabled":false,"status":"Greenhouse token returned 404 on 2026-07-19; re-verify official ATS","careers_url":"https://hailo.ai/company-overview/careers/"},
     {"name":"proteanTecs","tier":2,"enabled":false,"status":"Greenhouse token returned 404 on 2026-07-19; re-verify official ATS","careers_url":"https://www.proteantecs.com/company/careers/"},
     {"name":"CEVA","tier":2,"enabled":false,"status":"pending official connector","careers_url":"https://www.ceva-ip.com/careers/"},
-    {"name":"Valens Semiconductor","tier":2,"enabled":false,"status":"pending official connector","careers_url":"https://www.valens.com/careers/"},
+    {"name":"Valens Semiconductor","tier":2,"enabled":true,"source":{"type":"valens-html","base_url":"https://www.valens.com","search_url":"https://www.valens.com/careers/"}},
     {"name":"Autotalks","tier":2,"enabled":false,"status":"pending official connector","careers_url":"https://www.autotalks.com/careers/"},
     {"name":"SolarEdge","tier":2,"enabled":false,"status":"pending official connector","careers_url":"https://www.solaredge.com/corporate/careers"},
     {"name":"Western Digital / SanDisk","tier":2,"enabled":true,"source":{"type":"smartrecruiters","company_slug":"WesternDigital"}}

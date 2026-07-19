@@ -216,6 +216,30 @@ class GoogleCareersHtmlAdapter(Adapter):
         return list(jobs.values())
 
 
+class ValensHtmlAdapter(Adapter):
+    """Read Valens' official listing and verify location from each job page."""
+
+    def fetch(self, company: dict[str, Any]) -> list[Job]:
+        src = company["source"]
+        listing = request_text(src["search_url"])
+        links = parse_official_job_links(listing, r"/position/[^/]+/")
+        jobs = []
+        for href, title in links:
+            url = urljoin(src["base_url"], href)
+            detail = request_text(url)
+            location_match = re.search(
+                r'<div[^>]+class="location"[^>]*>.*?<span[^>]*>(.*?)</span>', detail, re.I | re.S
+            )
+            location = plain(location_match.group(1)) if location_match else ""
+            id_match = re.search(r"/position/([^/]+)/", href)
+            jobs.append(Job(
+                company=company["name"], title=title, url=url, location=location,
+                description=plain(detail), external_id=id_match.group(1) if id_match else url,
+                source="official-html",
+            ))
+        return jobs
+
+
 ADAPTERS: dict[str, type[Adapter]] = {
     "amazon-jobs": AmazonJobsAdapter,
     "greenhouse": GreenhouseAdapter,
@@ -225,4 +249,5 @@ ADAPTERS: dict[str, type[Adapter]] = {
     "official-html": OfficialHtmlAdapter,
     "mobileye-html": MobileyeHtmlAdapter,
     "google-careers-html": GoogleCareersHtmlAdapter,
+    "valens-html": ValensHtmlAdapter,
 }
