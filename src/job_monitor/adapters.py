@@ -58,6 +58,37 @@ class SmartRecruitersAdapter(Adapter):
                 return jobs
 
 
+class AmazonJobsAdapter(Adapter):
+    """Official Amazon Jobs JSON feed, restricted to a configured country."""
+
+    def fetch(self, company: dict[str, Any]) -> list[Job]:
+        src = company["source"]
+        limit = int(src.get("page_size", 100))
+        offset, jobs = 0, []
+        while True:
+            separator = "&" if "?" in src["endpoint"] else "?"
+            url = f"{src['endpoint']}{separator}country={src.get('country', 'ISR')}&result_limit={limit}&offset={offset}"
+            data = request_json(url)
+            batch = data.get("jobs", [])
+            for j in batch:
+                location = j.get("location", "")
+                if "israel" not in location.lower():
+                    location = f"{location}, Israel".strip(", ")
+                jobs.append(Job(
+                    company=company["name"], title=j.get("title", ""),
+                    url=urljoin(src.get("base_url", "https://www.amazon.jobs"), j.get("job_path", "")),
+                    location=location,
+                    description=plain(" ".join((j.get("description", ""), j.get("basic_qualifications", ""),
+                                                  j.get("preferred_qualifications", "")))),
+                    external_id=str(j.get("id") or j.get("job_path", "")),
+                    posted_at=j.get("posted_date", ""), source="amazon-jobs", raw=j,
+                ))
+            offset += len(batch)
+            total = int(data.get("hits", 0))
+            if not batch or offset >= total or offset >= int(src.get("max_results", 1000)):
+                return jobs
+
+
 class WorkdayAdapter(Adapter):
     def fetch(self, company: dict[str, Any]) -> list[Job]:
         src = company["source"]
@@ -132,10 +163,31 @@ class OfficialHtmlAdapter(Adapter):
         return list(jobs.values())
 
 
+class MobileyeHtmlAdapter(Adapter):
+    """Extract Mobileye's official job URLs from its embedded page data."""
+
+    def fetch(self, company: dict[str, Any]) -> list[Job]:
+        src = company["source"]
+        html_text = request_text(src["search_url"])
+        pattern = re.compile(r"/jobs/([^/\"'< ]+)/([0-9a-f-]{36})")
+        jobs: dict[str, Job] = {}
+        for match in pattern.finditer(html_text):
+            slug, external_id = match.groups()
+            title = plain(slug.replace("-", " ")).title()
+            jobs.setdefault(external_id, Job(
+                company=company["name"], title=title,
+                url=urljoin(src["base_url"], match.group(0)), location="Israel",
+                external_id=external_id, source="official-html",
+            ))
+        return list(jobs.values())
+
+
 ADAPTERS: dict[str, type[Adapter]] = {
+    "amazon-jobs": AmazonJobsAdapter,
     "greenhouse": GreenhouseAdapter,
     "lever": LeverAdapter,
     "smartrecruiters": SmartRecruitersAdapter,
     "workday": WorkdayAdapter,
     "official-html": OfficialHtmlAdapter,
+    "mobileye-html": MobileyeHtmlAdapter,
 }

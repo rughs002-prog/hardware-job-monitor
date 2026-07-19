@@ -50,7 +50,12 @@ def is_israel_job(job: Job) -> bool:
 
 def tag_job(job: Job) -> Job:
     text = f" {job.title} {job.description} ".lower()
-    job.tags = [tag for tag, terms in (ROLE_TAGS | LEVEL_TAGS).items() if any(_contains(text, term) for term in terms)]
+    title = f" {job.title} ".lower()
+    role_tags = [tag for tag, terms in ROLE_TAGS.items() if any(_contains(text, term) for term in terms)]
+    # Alert levels must be explicit in the title. Descriptions often contain generic
+    # internship language even for senior roles, which would create false alerts.
+    level_tags = [tag for tag, terms in LEVEL_TAGS.items() if any(_contains(title, term) for term in terms)]
+    job.tags = role_tags + level_tags
     job.relevance = [tag for tag, terms in CV_CONTEXT.items() if any(_contains(text, term) for term in terms)]
     return job
 
