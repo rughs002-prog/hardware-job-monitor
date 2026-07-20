@@ -74,11 +74,7 @@ class IaiJobsAdapter(Adapter):
 
     def fetch(self, company: dict[str, Any]) -> list[Job]:
         src = company["source"]
-        listing = request_text(src["jobs_url"])
-        feed_match = re.search(r'const\s+_jobsFile\s*=\s*["\']([^"\']+)', listing)
-        if not feed_match:
-            raise ValueError("IAI official jobs feed was not found in the careers page")
-        data = request_json(urljoin(src["base_url"], feed_match.group(1).replace(r"\/", "/")))
+        data = request_json(src["feed_url"])
         return [Job(
             company=company["name"], title=j.get("tl", ""),
             url=urljoin(src["base_url"], f"/job/{j.get('id', '')}/"),

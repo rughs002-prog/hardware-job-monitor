@@ -28,7 +28,7 @@
     {"name":"Autotalks","tier":2,"enabled":false,"status":"pending official connector","careers_url":"https://www.autotalks.com/careers/"},
     {"name":"SolarEdge","tier":2,"enabled":true,"source":{"type":"comeet","board_url":"https://www.comeet.com/jobs/SolarEdge/71.00A"}},
     {"name":"Western Digital / SanDisk","tier":2,"enabled":true,"source":{"type":"smartrecruiters","company_slug":"WesternDigital"}},
-    {"name":"Israel Aerospace Industries (IAI)","tier":1,"enabled":true,"source":{"type":"iai-official","base_url":"https://jobs.iai.co.il","jobs_url":"https://jobs.iai.co.il/jobs/"}},
+    {"name":"Israel Aerospace Industries (IAI)","tier":1,"enabled":true,"source":{"type":"iai-official","base_url":"https://jobs.iai.co.il","feed_url":"https://jobs.iai.co.il/wp-content/themes/tyco-wp/assets/json/jobs.json?v=monitor"}},
     {"name":"Elbit Systems","tier":1,"enabled":true,"source":{"type":"elbit-official","feed_url":"https://elbitsystemscareer.com/cron/jobs.json","board_url":"https://elbitsystemscareer.com/jobs"}},
     {"name":"Rafael Advanced Defense Systems","tier":1,"enabled":false,"status":"Official careers site returns anti-bot status 247 to cloud requests; dedicated connector required","careers_url":"https://career.rafael.co.il/"}
   ]
