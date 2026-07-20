@@ -111,12 +111,20 @@ def test_comeet_adapter_reads_embedded_positions(monkeypatch):
 
 
 def test_iai_adapter_reads_official_feed(monkeypatch):
-    monkeypatch.setattr("job_monitor.adapters.request_json", lambda _: [{
-        "id": 76048334, "tl": "סטודנט/ית להנדסת חשמל ואלקטרוניקה",
-        "ct": "יהוד", "dc": "פיתוח חומרה", "tp": "משרה חלקית",
-    }])
-    company = {"name": "IAI", "source": {"base_url": "https://jobs.iai.co.il", "feed_url": "feed"}}
+    monkeypatch.setattr("job_monitor.adapters.request_text", lambda _: (
+        '<script>const _jobsFile = "\\/wp-content\\/themes\\/tyco-wp\\/assets\\/json\\/jobs.json?v=123";</script>'
+    ))
+    seen = []
+    def fake_json(url):
+        seen.append(url)
+        return [{
+            "id": 76048334, "tl": "סטודנט/ית להנדסת חשמל ואלקטרוניקה",
+            "ct": "יהוד", "dc": "פיתוח חומרה", "tp": "משרה חלקית",
+        }]
+    monkeypatch.setattr("job_monitor.adapters.request_json", fake_json)
+    company = {"name": "IAI", "source": {"base_url": "https://jobs.iai.co.il", "jobs_url": "jobs"}}
     job = IaiJobsAdapter().fetch(company)[0]
+    assert seen == ["https://jobs.iai.co.il/wp-content/themes/tyco-wp/assets/json/jobs.json?v=123"]
     assert job.external_id == "76048334"
     assert job.url == "https://jobs.iai.co.il/job/76048334/"
     assert job.location == "יהוד"
