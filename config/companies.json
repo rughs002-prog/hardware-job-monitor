@@ -29,7 +29,7 @@
     {"name":"SolarEdge","tier":2,"enabled":true,"source":{"type":"comeet","board_url":"https://www.comeet.com/jobs/SolarEdge/71.00A"}},
     {"name":"Western Digital / SanDisk","tier":2,"enabled":true,"source":{"type":"smartrecruiters","company_slug":"WesternDigital"}},
     {"name":"Israel Aerospace Industries (IAI)","tier":1,"enabled":false,"status":"Official JSON feed works locally but returns an anti-bot page to GitHub Actions cloud IPs; cloud-safe connector required","careers_url":"https://jobs.iai.co.il/jobs/"},
-    {"name":"Elbit Systems","tier":1,"enabled":true,"source":{"type":"elbit-official","feed_url":"https://elbitsystemscareer.com/cron/jobs.json","board_url":"https://elbitsystemscareer.com/jobs"}},
+    {"name":"Elbit Systems","tier":1,"enabled":true,"source":{"type":"elbit-official","feed_url":"https://elbitsystemscareer.com/cron/jobs.json","job_url":"https://elbitsystemscareer.com/job/"}},
     {"name":"Rafael Advanced Defense Systems","tier":1,"enabled":false,"status":"Official careers site returns anti-bot status 247 to cloud requests; dedicated connector required","careers_url":"https://career.rafael.co.il/"}
   ]
 }

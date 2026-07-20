@@ -133,8 +133,9 @@ def test_elbit_adapter_reads_official_feed(monkeypatch):
         "description": "&lt;b&gt;Hardware team&lt;/b&gt;", "area": "Center",
         "openDate": "2026-07-12T07:16:00", "extendedProperties": [],
     }])
-    company = {"name": "Elbit", "source": {"feed_url": "feed", "board_url": "https://elbitsystemscareer.com/jobs"}}
+    company = {"name": "Elbit", "source": {"feed_url": "feed", "job_url": "https://elbitsystemscareer.com/job/"}}
     job = ElbitJobsAdapter().fetch(company)[0]
     assert job.external_id == "6970"
+    assert job.url == "https://elbitsystemscareer.com/job/?jid=20811"
     assert job.location == "Center, Israel"
     assert job.description == "Hardware team"

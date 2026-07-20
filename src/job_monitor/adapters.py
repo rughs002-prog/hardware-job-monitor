@@ -102,7 +102,7 @@ class ElbitJobsAdapter(Adapter):
             )))))
             jobs.append(Job(
                 company=company["name"], title=j.get("jobTitle", ""),
-                url=src["board_url"], location=location, description=description,
+                url=f"{src['job_url']}?jid={j.get('jobId', '')}", location=location, description=description,
                 external_id=str(j.get("jobCode") or j.get("jobId", "")),
                 posted_at=j.get("openDate", ""), source="elbit-official", raw=j,
             ))
