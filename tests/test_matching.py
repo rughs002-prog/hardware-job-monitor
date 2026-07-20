@@ -13,6 +13,13 @@ def test_broad_search_does_not_require_student_title():
     assert is_relevant(job)
 
 
+def test_hebrew_hardware_student_is_tagged():
+    job = tag_job(Job(company="IAI", title="סטודנט/ית להנדסת חשמל ואלקטרוניקה",
+                      url="https://example", location="יהוד", description="פיתוח חומרה"))
+    assert {"student", "board-hardware"}.issubset(job.tags)
+    assert is_relevant(job)
+
+
 def test_excludes_unrelated_role():
     job = tag_job(Job(company="Example", title="Marketing Intern", location="Tel Aviv", url="https://example/job/3"))
     assert not is_relevant(job)

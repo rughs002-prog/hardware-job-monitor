@@ -1,4 +1,4 @@
-from job_monitor.adapters import AmazonJobsAdapter, ComeetAdapter, GoogleCareersHtmlAdapter, MobileyeHtmlAdapter, ValensHtmlAdapter, WorkdayAdapter, parse_official_job_links
+from job_monitor.adapters import AmazonJobsAdapter, ComeetAdapter, ElbitJobsAdapter, GoogleCareersHtmlAdapter, IaiJobsAdapter, MobileyeHtmlAdapter, ValensHtmlAdapter, WorkdayAdapter, parse_official_job_links
 
 
 def test_parse_official_links_deduplicates_and_ignores_other_links():
@@ -108,3 +108,28 @@ def test_comeet_adapter_reads_embedded_positions(monkeypatch):
     assert jobs[0].title == "Physical Design Student"
     assert jobs[0].location == "Haifa, IL, Israel"
     assert jobs[0].external_id == "B2"
+
+
+def test_iai_adapter_reads_official_feed(monkeypatch):
+    monkeypatch.setattr("job_monitor.adapters.request_json", lambda _: [{
+        "id": 76048334, "tl": "סטודנט/ית להנדסת חשמל ואלקטרוניקה",
+        "ct": "יהוד", "dc": "פיתוח חומרה", "tp": "משרה חלקית",
+    }])
+    company = {"name": "IAI", "source": {"base_url": "https://jobs.iai.co.il", "feed_url": "feed"}}
+    job = IaiJobsAdapter().fetch(company)[0]
+    assert job.external_id == "76048334"
+    assert job.url == "https://jobs.iai.co.il/job/76048334/"
+    assert job.location == "יהוד"
+
+
+def test_elbit_adapter_reads_official_feed(monkeypatch):
+    monkeypatch.setattr("job_monitor.adapters.request_json", lambda _: [{
+        "jobId": 20811, "jobCode": "6970", "jobTitle": "Electrical Engineering Student",
+        "description": "&lt;b&gt;Hardware team&lt;/b&gt;", "area": "Center",
+        "openDate": "2026-07-12T07:16:00", "extendedProperties": [],
+    }])
+    company = {"name": "Elbit", "source": {"feed_url": "feed", "board_url": "https://elbitsystemscareer.com/jobs"}}
+    job = ElbitJobsAdapter().fetch(company)[0]
+    assert job.external_id == "6970"
+    assert job.location == "Center, Israel"
+    assert job.description == "Hardware team"

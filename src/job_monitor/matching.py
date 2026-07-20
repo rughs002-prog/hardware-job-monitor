@@ -6,24 +6,25 @@ from .models import Job
 
 
 ROLE_TAGS: dict[str, tuple[str, ...]] = {
-    "chip-design": ("chip design", "silicon design", "asic", "soc design"),
+    "chip-design": ("chip design", "silicon design", "asic", "soc design", "תכנון שבבים", "תכן שבבים"),
     "physical-design": ("physical design", "physical implementation", "back-end", "backend vlsi", "place and route"),
-    "rtl": ("rtl", "logic design", "digital design", "microarchitecture"),
-    "verification": ("verification", "pre-silicon", "formal verification", "uvm", "systemverilog"),
-    "validation": ("validation", "post-silicon", "hardware validation", "characterization"),
+    "rtl": ("rtl", "logic design", "digital design", "microarchitecture", "תכן לוגי", "תכנון לוגי"),
+    "verification": ("verification", "pre-silicon", "formal verification", "uvm", "systemverilog", "וריפיקציה", "אימות תכן"),
+    "validation": ("validation", "post-silicon", "hardware validation", "characterization", "ולידציה", "אימות חומרה"),
     "fpga": ("fpga",),
     "firmware": ("firmware", "low-level software", "device driver", "embedded software"),
     "embedded": ("embedded", "real-time", "rtos"),
-    "analog-mixed-signal": ("analog", "mixed signal", "mixed-signal", "ams", "rf", "serdes"),
+    "analog-mixed-signal": ("analog", "mixed signal", "mixed-signal", "ams", "rf", "serdes", "אנלוגי", "אלקטרואופטיקה"),
     "cad-eda": ("cad engineer", "eda", "design automation", "vlsi cad"),
     "dft": ("design for test", "dft", "scan insertion", "atpg"),
     "board-hardware": ("board design", "pcb", "signal integrity", "hardware engineer", "hardware engineering",
-                       "electrical engineer", "electrical engineering", "motion control", "electronics"),
+                       "electrical engineer", "electrical engineering", "motion control", "electronics",
+                       "חומרה", "הנדסת חשמל", "מהנדס חשמל", "אלקטרוניקה", "תכנון כרטיס", "תכן כרטיס"),
 }
 
 LEVEL_TAGS: dict[str, tuple[str, ...]] = {
-    "student": ("student", "working student", "student engineer"),
-    "intern": ("intern", "internship", "co-op", "coop", "summer intern", "university intern"),
+    "student": ("student", "working student", "student engineer", "סטודנט", "סטודנטית", "סטודנט/ית", "סטודנט.ית"),
+    "intern": ("intern", "internship", "co-op", "coop", "summer intern", "university intern", "התמחות", "מתמחה"),
     "entry-level": ("junior", "entry level", "entry-level", "new college graduate", "university graduate", "graduate engineer"),
 }
 
@@ -31,6 +32,7 @@ ISRAEL_TERMS = (
     "israel", "tel aviv", "tel-aviv", "haifa", "herzliya", "petah tikva", "petach tikva",
     "ra'anana", "raanana", "yokneam", "caesarea", "jerusalem", "kiryat gat", "beer sheva",
     "be'er sheva", "hod hasharon", "netanya", "rehovot", "ramat gan", "rosh haayin",
+    "ישראל", "יהוד", "לוד", "אשדוד", "באר יעקב", "קריית ביאליק", "כרמיאל", "מודיעין",
 )
 
 CV_CONTEXT = {

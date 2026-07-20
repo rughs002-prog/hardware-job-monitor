@@ -69,6 +69,46 @@ class ComeetAdapter(Adapter):
         return jobs
 
 
+class IaiJobsAdapter(Adapter):
+    """Read IAI's official public jobs JSON feed."""
+
+    def fetch(self, company: dict[str, Any]) -> list[Job]:
+        src = company["source"]
+        data = request_json(src["feed_url"])
+        return [Job(
+            company=company["name"], title=j.get("tl", ""),
+            url=urljoin(src["base_url"], f"/job/{j.get('id', '')}/"),
+            location=j.get("ct", "") or "Israel",
+            description=plain(j.get("dc", "")), external_id=str(j.get("id", "")),
+            source="iai-official", raw=j,
+        ) for j in data]
+
+
+class ElbitJobsAdapter(Adapter):
+    """Read the public JSON feed used by Elbit's official careers site."""
+
+    def fetch(self, company: dict[str, Any]) -> list[Job]:
+        src = company["source"]
+        data = request_json(src["feed_url"])
+        jobs = []
+        for j in data:
+            extended = {item.get("PropertyName"): item.get("Value", "")
+                        for item in j.get("extendedProperties") or []}
+            location = ", ".join(filter(None, (
+                j.get("locationAddress"), j.get("area") or extended.get("Area"), "Israel",
+            )))
+            description = plain(unescape(" ".join(filter(None, (
+                j.get("description"), j.get("requirements"), j.get("skills"),
+            )))))
+            jobs.append(Job(
+                company=company["name"], title=j.get("jobTitle", ""),
+                url=src["board_url"], location=location, description=description,
+                external_id=str(j.get("jobCode") or j.get("jobId", "")),
+                posted_at=j.get("openDate", ""), source="elbit-official", raw=j,
+            ))
+        return jobs
+
+
 class SmartRecruitersAdapter(Adapter):
     def fetch(self, company: dict[str, Any]) -> list[Job]:
         slug = company["source"]["company_slug"]
@@ -270,6 +310,8 @@ class ValensHtmlAdapter(Adapter):
 
 
 ADAPTERS: dict[str, type[Adapter]] = {
+    "iai-official": IaiJobsAdapter,
+    "elbit-official": ElbitJobsAdapter,
     "comeet": ComeetAdapter,
     "amazon-jobs": AmazonJobsAdapter,
     "greenhouse": GreenhouseAdapter,

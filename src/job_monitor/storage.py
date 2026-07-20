@@ -13,6 +13,12 @@ ALERT_ROLE_TAGS = {
     "analog-mixed-signal", "cad-eda", "dft", "board-hardware",
 }
 SOFTWARE_TITLE_TERMS = ("software", "firmware", "embedded", "devops", "algorithm", "data scientist", "applied scientist")
+NON_HARDWARE_TITLE_TERMS = (
+    "administration", "administrative", "accounting", "economics", "finance", "human resources", " hr ",
+    "legal", "logistics", "planning and production control", "mechanical engineering", "quality engineering",
+    "אדמיניסטרציה", "חשבונאות", "כלכלה", "כספים", "משאבי אנוש", "משפטים", "לוגיסטיקה",
+    "הנדסת מכונות", "הנדסת תעשייה וניהול", "איכות",
+)
 
 
 SCHEMA = """
@@ -78,6 +84,9 @@ class Store:
             title = row["title"].lower()
             tags = set(json.loads(row["tags_json"]))
             if any(term in title for term in SOFTWARE_TITLE_TERMS):
+                continue
+            padded_title = f" {title} "
+            if any(term in padded_title for term in NON_HARDWARE_TITLE_TERMS):
                 continue
             if not ALERT_ROLE_TAGS.intersection(tags):
                 continue

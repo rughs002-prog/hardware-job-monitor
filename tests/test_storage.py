@@ -41,6 +41,18 @@ def test_pending_email_excludes_software_only_student_roles(tmp_path):
     store.close()
 
 
+def test_pending_email_excludes_non_hardware_student_titles(tmp_path):
+    store = Store(str(tmp_path / "jobs.db"))
+    store.upsert(Job(company="IAI", title="סטודנט/ית לאדמיניסטרציה", url="https://a/1",
+                     tags=["board-hardware", "student"]))
+    store.upsert(Job(company="Elbit", title="סטודנט.ית להנדסת מכונות", url="https://a/2",
+                     tags=["board-hardware", "student"]))
+    store.upsert(Job(company="Elbit", title="Electrical Engineering Student", url="https://a/3",
+                     tags=["board-hardware", "student"]))
+    assert [row["title"] for row in store.pending()] == ["Electrical Engineering Student"]
+    store.close()
+
+
 def test_pending_email_rejects_software_titles_and_deduplicates_locale_variants(tmp_path):
     store = Store(str(tmp_path / "jobs.db"))
     store.upsert(Job(company="A", title="Software Development Student", url="https://a/1",
