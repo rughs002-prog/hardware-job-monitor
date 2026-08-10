@@ -5,9 +5,9 @@ from job_monitor.storage import Store
 def test_upsert_detects_new_only_once(tmp_path):
     store = Store(str(tmp_path / "jobs.db"))
     job = Job(company="Example", title="RTL Intern", url="https://example/jobs/42", external_id="42", tags=["rtl", "intern"])
-    assert store.upsert(job) is True
+    assert store.upsert(job) == "new"
     job.title = "RTL Design Intern"
-    assert store.upsert(job) is False
+    assert store.upsert(job) == "modified"
     assert len(store.pending()) == 1
     store.close()
 
@@ -16,28 +16,32 @@ def test_same_external_id_at_different_companies_is_not_duplicate(tmp_path):
     store = Store(str(tmp_path / "jobs.db"))
     a = Job(company="A", title="FPGA Student", url="https://a/jobs/1", external_id="1")
     b = Job(company="B", title="FPGA Student", url="https://b/jobs/1", external_id="1")
-    assert store.upsert(a) is True
-    assert store.upsert(b) is True
+    assert store.upsert(a) == "new"
+    assert store.upsert(b) == "new"
     store.close()
 
 
-def test_pending_email_excludes_regular_and_entry_level_roles(tmp_path):
+def test_pending_email_includes_student_intern_and_junior_roles(tmp_path):
     store = Store(str(tmp_path / "jobs.db"))
     store.upsert(Job(company="A", title="RTL Engineer", url="https://a/1", tags=["rtl"]))
     store.upsert(Job(company="A", title="Junior RTL Engineer", url="https://a/2", tags=["rtl", "entry-level"]))
     store.upsert(Job(company="A", title="RTL Student", url="https://a/3", tags=["rtl", "student"]))
     store.upsert(Job(company="A", title="RTL Intern", url="https://a/4", tags=["rtl", "intern"]))
-    assert {row["title"] for row in store.pending()} == {"RTL Student", "RTL Intern"}
+    assert {row["title"] for row in store.pending()} == {
+        "Junior RTL Engineer", "RTL Student", "RTL Intern"
+    }
     store.close()
 
 
-def test_pending_email_excludes_software_only_student_roles(tmp_path):
+def test_pending_email_includes_embedded_software_student_roles(tmp_path):
     store = Store(str(tmp_path / "jobs.db"))
     store.upsert(Job(company="A", title="Embedded Software Student", url="https://a/1",
                      tags=["firmware", "embedded", "student"]))
     store.upsert(Job(company="A", title="Hardware Validation Student", url="https://a/2",
                      tags=["validation", "student"]))
-    assert [row["title"] for row in store.pending()] == ["Hardware Validation Student"]
+    assert {row["title"] for row in store.pending()} == {
+        "Embedded Software Student", "Hardware Validation Student"
+    }
     store.close()
 
 
@@ -86,4 +90,17 @@ def test_source_history_enables_incremental_scans(tmp_path):
     store.mark_full_scan("A")
     assert store.source_ids("A") == {"1"}
     assert store.full_scan_due("A") is False
+    store.close()
+
+
+def test_modified_and_closed_lifecycle(tmp_path):
+    store = Store(str(tmp_path / "jobs.db"))
+    job = Job(company="A", title="RTL Student", url="https://a/1", external_id="1",
+              tags=["rtl", "student"], priority="high")
+    assert store.upsert(job) == "new"
+    assert store.upsert(job) == "unchanged"
+    job.description = "Updated requirements"
+    assert store.upsert(job) == "modified"
+    assert store.mark_closed_missing("A", set()) == 1
+    assert store.db.execute("SELECT is_active FROM jobs").fetchone()[0] == 0
     store.close()

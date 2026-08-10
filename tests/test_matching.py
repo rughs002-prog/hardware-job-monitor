@@ -32,4 +32,21 @@ def test_excludes_non_israel_role():
 
 def test_entry_level_variants_are_tagged():
     job = tag_job(Job(company="Example", title="New College Graduate FPGA Engineer", location="Israel", url="https://example/job/5"))
-    assert {"fpga", "entry-level"}.issubset(job.tags)
+    assert {"fpga", "junior"}.issubset(job.tags)
+
+
+def test_formal_verification_is_distinct_from_design_verification():
+    formal = tag_job(Job(company="Apple", title="Formal Verification Intern",
+                         location="Haifa", url="https://example/formal"))
+    dv = tag_job(Job(company="NVIDIA", title="Design Verification Student",
+                     location="Tel Aviv", url="https://example/dv"))
+    assert "formal-verification" in formal.tags
+    assert "design-verification" in dv.tags
+    assert formal.priority == dv.priority == "high"
+
+
+def test_related_role_is_preserved_but_not_high_priority():
+    job = tag_job(Job(company="Example", title="Mechanical Engineer",
+                      location="Israel", url="https://example/me"))
+    assert job.priority == "related"
+    assert is_relevant(job)

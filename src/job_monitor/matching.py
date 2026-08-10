@@ -1,44 +1,71 @@
 from __future__ import annotations
 
 import re
+from collections import Counter
 
 from .models import Job
 
 
 ROLE_TAGS: dict[str, tuple[str, ...]] = {
-    "chip-design": ("chip design", "silicon design", "asic", "soc design", "תכנון שבבים", "תכן שבבים"),
-    "physical-design": ("physical design", "physical implementation", "back-end", "backend vlsi", "place and route"),
-    "rtl": ("rtl", "logic design", "digital design", "microarchitecture", "תכן לוגי", "תכנון לוגי"),
-    "verification": ("verification", "pre-silicon", "formal verification", "uvm", "systemverilog", "וריפיקציה", "אימות תכן"),
-    "validation": ("validation", "post-silicon", "hardware validation", "characterization", "ולידציה", "אימות חומרה"),
+    "rtl": ("rtl", "logic design", "digital design", "microarchitecture", "chip design",
+            "silicon design", "asic design", "soc design", "front-end design"),
+    "physical-design": ("physical design", "physical implementation", "backend vlsi",
+                        "back-end vlsi", "place and route", "pnr engineer"),
+    "formal-verification": ("formal verification", "formal methods", "property checking",
+                            "model checking", "jaspergold", "vc formal"),
+    "design-verification": ("design verification", "pre-silicon verification",
+                            "functional verification", "verification engineer", "uvm",
+                            "systemverilog", "testbench"),
+    "validation": ("validation", "post-silicon", "hardware validation", "silicon validation",
+                   "characterization"),
     "fpga": ("fpga",),
-    "firmware": ("firmware", "low-level software", "device driver", "embedded software"),
-    "embedded": ("embedded", "real-time", "rtos"),
-    "analog-mixed-signal": ("analog", "mixed signal", "mixed-signal", "ams", "rf", "serdes", "אנלוגי", "אלקטרואופטיקה"),
+    "embedded": ("embedded", "real-time", "rtos", "bare metal"),
+    "firmware": ("firmware", "low-level software", "device driver", "bios", "bootloader"),
+    "board-hardware": ("board design", "pcb", "signal integrity", "hardware engineer",
+                       "hardware engineering", "electrical engineer", "electrical engineering",
+                       "electronics", "board bring-up", "חומרה", "הנדסת חשמל", "מהנדס חשמל",
+                       "אלקטרוניקה", "תכנון כרטיס"),
+    "analog-mixed-signal": ("analog", "mixed signal", "mixed-signal", "ams", "serdes",
+                            "pll", "adc", "dac"),
+    "rf": ("radio frequency", "rf engineer", "rf design", "antenna", "microwave"),
+    "signal-processing": ("signal processing", "dsp engineer", "image processing"),
     "cad-eda": ("cad engineer", "eda", "design automation", "vlsi cad"),
-    "dft": ("design for test", "dft", "scan insertion", "atpg"),
-    "board-hardware": ("board design", "pcb", "signal integrity", "hardware engineer", "hardware engineering",
-                       "electrical engineer", "electrical engineering", "motion control", "electronics",
-                       "חומרה", "הנדסת חשמל", "מהנדס חשמל", "אלקטרוניקה", "תכנון כרטיס", "תכן כרטיס"),
+    "power": ("power electronics", "power engineer", "power supply", "power integrity",
+              "high voltage"),
+    "integration": ("system integration", "integration engineer", "integration student",
+                    "system engineer"),
+    "mechanical": ("mechanical engineer", "mechanical engineering", "mechatronics",
+                   "thermal engineer", "הנדסת מכונות"),
+    "software-other": ("software engineer", "software engineering", "software developer", "backend engineer",
+                       "cloud engineer", "machine learning", "data scientist", "devops"),
 }
 
 LEVEL_TAGS: dict[str, tuple[str, ...]] = {
-    "student": ("student", "working student", "student engineer", "סטודנט", "סטודנטית", "סטודנט/ית", "סטודנט.ית"),
-    "intern": ("intern", "internship", "co-op", "coop", "summer intern", "university intern", "התמחות", "מתמחה"),
-    "entry-level": ("junior", "entry level", "entry-level", "new college graduate", "university graduate", "graduate engineer"),
+    "student": ("student", "working student", "student engineer", "סטודנט", "סטודנטית"),
+    "intern": ("intern", "internship", "co-op", "coop", "summer intern", "university intern",
+               "התמחות", "מתמחה"),
+    "junior": ("junior", "entry level", "entry-level", "new college graduate",
+               "university graduate", "graduate engineer"),
 }
 
 ISRAEL_TERMS = (
     "israel", "tel aviv", "tel-aviv", "haifa", "herzliya", "petah tikva", "petach tikva",
-    "ra'anana", "raanana", "yokneam", "caesarea", "jerusalem", "kiryat gat", "beer sheva",
-    "be'er sheva", "hod hasharon", "netanya", "rehovot", "ramat gan", "rosh haayin",
-    "ישראל", "יהוד", "לוד", "אשדוד", "באר יעקב", "קריית ביאליק", "כרמיאל", "מודיעין",
+    "ra'anana", "raanana", "rannana", "yokneam", "caesarea", "jerusalem", "kiryat gat",
+    "beer sheva", "be'er sheva", "hod hasharon", "netanya", "rehovot", "ramat gan",
+    "rosh haayin", "kfar saba", "bnei brak", "airport city", "ישראל", "יהוד", "לוד",
+    "אשדוד", "באר יעקב", "קריית ביאליק", "כרמיאל", "מודיעין",
 )
 
 CV_CONTEXT = {
     "cv-digital-foundations": ("digital design", "logic design", "computer architecture", "cpu", "assembly"),
     "cv-c-programming": (" c ", "c programming", "firmware", "embedded"),
     "cv-vlsi-direction": ("vlsi", "asic", "physical design", "rtl", "chip design"),
+}
+
+PRIORITY_CATEGORIES = {
+    "rtl", "physical-design", "formal-verification", "design-verification", "validation",
+    "fpga", "embedded", "firmware", "board-hardware", "analog-mixed-signal", "rf",
+    "signal-processing", "cad-eda", "power",
 }
 
 
@@ -54,15 +81,35 @@ def is_israel_job(job: Job) -> bool:
 def tag_job(job: Job) -> Job:
     text = f" {job.title} {job.description} ".lower()
     title = f" {job.title} ".lower()
-    role_tags = [tag for tag, terms in ROLE_TAGS.items() if any(_contains(text, term) for term in terms)]
-    # Alert levels must be explicit in the title. Descriptions often contain generic
-    # internship language even for senior roles, which would create false alerts.
-    level_tags = [tag for tag, terms in LEVEL_TAGS.items() if any(_contains(title, term) for term in terms)]
-    job.tags = role_tags + level_tags
+    roles = [tag for tag, terms in ROLE_TAGS.items() if any(_contains(text, term) for term in terms)]
+    levels = [tag for tag, terms in LEVEL_TAGS.items() if any(_contains(title, term) for term in terms)]
+    job.tags = roles + levels
     job.relevance = [tag for tag, terms in CV_CONTEXT.items() if any(_contains(text, term) for term in terms)]
+    israel = is_israel_job(job)
+    job.inclusion_reasons = (["israel-location"] if israel else [])
+    job.inclusion_reasons += [f"category:{tag}" for tag in roles]
+    job.inclusion_reasons += [f"career-level:{tag}" for tag in levels]
+    job.exclusion_reasons = []
+    if not israel:
+        job.exclusion_reasons.append("outside-or-unknown-israel-location")
+    if not roles:
+        job.exclusion_reasons.append("no-related-role-keyword")
+    if not levels:
+        job.exclusion_reasons.append("no-student-intern-junior-title")
+    if israel and PRIORITY_CATEGORIES.intersection(roles) and levels:
+        job.priority = "high"
+    elif israel and roles:
+        job.priority = "related"
+    else:
+        job.priority = "excluded"
     return job
 
 
 def is_relevant(job: Job) -> bool:
-    """Broad inclusion: require Israel plus one role tag; do not reject on experience."""
-    return is_israel_job(job) and any(tag in ROLE_TAGS for tag in job.tags)
+    return job.priority != "excluded"
+
+
+def reason_counts(jobs: list[Job], included: bool) -> dict[str, int]:
+    values = (reason for job in jobs
+              for reason in (job.inclusion_reasons if included else job.exclusion_reasons))
+    return dict(Counter(values).most_common())

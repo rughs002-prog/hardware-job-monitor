@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import html
+import json
 import os
 import smtplib
 from email.message import EmailMessage
@@ -11,11 +12,16 @@ def render_digest(rows: list[Row]) -> tuple[str, str]:
     subject = f"{len(rows)} new Israel hardware student/intern job{'s' if len(rows) != 1 else ''}"
     items = []
     for row in rows:
-        tags = ", ".join(__import__("json").loads(row["tags_json"]))
-        items.append(f'<li><b>{html.escape(row["company"])} — {html.escape(row["title"])}</b><br>'
-                     f'{html.escape(row["location"] or "Location not stated")} · {html.escape(tags)}<br>'
-                     f'<a href="{html.escape(row["url"], quote=True)}">Official job posting</a></li>')
-    return subject, "<h2>New hardware / VLSI student and intern roles</h2><ul>" + "\n".join(items) + "</ul>"
+        tags = ", ".join(json.loads(row["tags_json"]))
+        reasons = ", ".join(json.loads(row["inclusion_reasons_json"]))
+        items.append(
+            f'<li><b>{html.escape(row["company"])} — {html.escape(row["title"])}</b><br>'
+            f'{html.escape(row["location"] or "Location not stated")} · {html.escape(tags)}<br>'
+            f'Why included: {html.escape(reasons)}<br>'
+            f'<a href="{html.escape(row["url"], quote=True)}">Official job posting</a></li>'
+        )
+    body = "<h2>New high-priority hardware / VLSI roles</h2><ul>" + "\n".join(items) + "</ul>"
+    return subject, body
 
 
 def send_email(rows: list[Row]) -> None:

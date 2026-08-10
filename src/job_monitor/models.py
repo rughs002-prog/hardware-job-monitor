@@ -17,6 +17,9 @@ class Job:
     source: str = ""
     tags: list[str] = field(default_factory=list)
     relevance: list[str] = field(default_factory=list)
+    priority: str = "related"
+    inclusion_reasons: list[str] = field(default_factory=list)
+    exclusion_reasons: list[str] = field(default_factory=list)
     raw: dict[str, Any] = field(default_factory=dict, repr=False)
 
     @property

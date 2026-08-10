@@ -111,3 +111,30 @@ Or run the standard-library smoke check used during development:
 ```powershell
 python -m compileall -q src tests
 ```
+# Run intelligence and job lifecycle
+
+Every run now prints a per-company table and writes it to the GitHub Actions run
+summary. It reports fetched, relevant, ignored, high-priority, broader related,
+new, modified, closed, sent, and failed counts. Inclusion and exclusion reason
+counts are printed below each company.
+
+`incremental-partial` is important: Workday sources stop after consecutive pages
+whose IDs are already known. A zero in such a run does **not** mean that Marvell,
+Cadence, Broadcom, Analog Devices, NXP, or another company has no Israel roles.
+A complete scan is forced every six hours by default. Closed-job detection only
+runs on complete listings, so a partial scan cannot falsely close jobs.
+
+Categories are RTL, Physical Design, Formal Verification, Design Verification,
+Validation, FPGA, Embedded, Firmware, Board/Hardware, Analog/Mixed-Signal, RF,
+Signal Processing, CAD/EDA, Power, Integration, Mechanical, and Software-other.
+
+Discovery remains broad:
+
+- `high` means an Israel Student, Intern, or Junior title in a target category and
+  is eligible for immediate email.
+- `related` is stored and tracked but does not generate an immediate email.
+- `excluded` is counted with reasons but is not stored as a relevant job.
+
+Existing SQLite databases are migrated in place. New, modified, and closed states
+use a stable company/external-ID fingerprint plus a content hash. Modified jobs
+are tracked in summaries; email remains focused on unseen high-priority jobs.
