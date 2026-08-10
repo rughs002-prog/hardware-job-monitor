@@ -37,7 +37,7 @@ def test_entry_level_variants_are_tagged():
 
 def test_formal_verification_is_distinct_from_design_verification():
     formal = tag_job(Job(company="Apple", title="Formal Verification Intern",
-                         location="Haifa", url="https://example/formal"))
+                         location="Herzliya", url="https://example/formal"))
     dv = tag_job(Job(company="NVIDIA", title="Design Verification Student",
                      location="Tel Aviv", url="https://example/dv"))
     assert "formal-verification" in formal.tags
@@ -50,3 +50,18 @@ def test_related_role_is_preserved_but_not_high_priority():
                       location="Israel", url="https://example/me"))
     assert job.priority == "related"
     assert is_relevant(job)
+
+
+def test_student_role_outside_central_israel_is_related_not_alerted():
+    job = tag_job(Job(company="Example", title="RTL Student", location="Haifa, Israel",
+                      url="https://example/haifa"))
+    assert job.priority == "related"
+    assert "outside-central-israel" in job.exclusion_reasons
+    assert is_relevant(job)
+
+
+def test_central_israel_student_role_is_high_priority():
+    job = tag_job(Job(company="Example", title="FPGA Intern", location="Petah Tikva, Israel",
+                      url="https://example/center"))
+    assert job.priority == "high"
+    assert "central-israel-location" in job.inclusion_reasons

@@ -56,6 +56,17 @@ ISRAEL_TERMS = (
     "אשדוד", "באר יעקב", "קריית ביאליק", "כרמיאל", "מודיעין",
 )
 
+CENTRAL_ISRAEL_TERMS = (
+    "tel aviv", "tel-aviv", "herzliya", "petah tikva", "petach tikva", "ra'anana",
+    "raanana", "rannana", "hod hasharon", "netanya", "rehovot", "ramat gan",
+    "rosh haayin", "kfar saba", "bnei brak", "airport city", "holon", "bat yam",
+    "rishon lezion", "rishon le-zion", "or yehuda", "shoham", "modiin", "modi'in",
+    "yehud", "lod", "tel-avis", "תל אביב", "הרצליה", "פתח תקווה", "רעננה",
+    "הוד השרון", "נתניה", "רחובות", "רמת גן", "ראש העין", "כפר סבא",
+    "בני ברק", "חולון", "בת ים", "ראשון לציון", "אור יהודה", "שוהם",
+    "מודיעין", "יהוד", "לוד",
+)
+
 CV_CONTEXT = {
     "cv-digital-foundations": ("digital design", "logic design", "computer architecture", "cpu", "assembly"),
     "cv-c-programming": (" c ", "c programming", "firmware", "embedded"),
@@ -78,6 +89,11 @@ def is_israel_job(job: Job) -> bool:
     return any(_contains(haystack, term) for term in ISRAEL_TERMS)
 
 
+def is_central_israel_job(job: Job) -> bool:
+    haystack = f" {job.location} {job.title} ".lower()
+    return any(_contains(haystack, term) for term in CENTRAL_ISRAEL_TERMS)
+
+
 def tag_job(job: Job) -> Job:
     text = f" {job.title} {job.description} ".lower()
     title = f" {job.title} ".lower()
@@ -86,17 +102,22 @@ def tag_job(job: Job) -> Job:
     job.tags = roles + levels
     job.relevance = [tag for tag, terms in CV_CONTEXT.items() if any(_contains(text, term) for term in terms)]
     israel = is_israel_job(job)
+    central = is_central_israel_job(job)
     job.inclusion_reasons = (["israel-location"] if israel else [])
     job.inclusion_reasons += [f"category:{tag}" for tag in roles]
     job.inclusion_reasons += [f"career-level:{tag}" for tag in levels]
     job.exclusion_reasons = []
     if not israel:
         job.exclusion_reasons.append("outside-or-unknown-israel-location")
+    elif central:
+        job.inclusion_reasons.append("central-israel-location")
+    else:
+        job.exclusion_reasons.append("outside-central-israel")
     if not roles:
         job.exclusion_reasons.append("no-related-role-keyword")
     if not levels:
         job.exclusion_reasons.append("no-student-intern-junior-title")
-    if israel and PRIORITY_CATEGORIES.intersection(roles) and levels:
+    if israel and central and PRIORITY_CATEGORIES.intersection(roles) and levels:
         job.priority = "high"
     elif israel and roles:
         job.priority = "related"

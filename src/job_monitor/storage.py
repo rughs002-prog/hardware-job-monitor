@@ -84,7 +84,7 @@ class Store:
             any(term in job.title.lower() for term in SOFTWARE_TITLE_TERMS)
             and not {"embedded", "firmware"}.intersection(job.tags)
         )
-        if (job.priority == "related" and not unrelated_title
+        if (job.priority == "related" and not job.inclusion_reasons and not unrelated_title
                 and not software_only_title
                 and {"student", "intern", "junior", "entry-level"}.intersection(job.tags)):
             role_tags = set(job.tags) - {"student", "intern", "junior", "entry-level"}

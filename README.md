@@ -130,8 +130,10 @@ Signal Processing, CAD/EDA, Power, Integration, Mechanical, and Software-other.
 
 Discovery remains broad:
 
-- `high` means an Israel Student, Intern, or Junior title in a target category and
-  is eligible for immediate email.
+- `high` means a Central Israel Student, Intern, or Junior title in a target
+  category and is eligible for immediate email. Central Israel includes the Tel
+  Aviv metro, Herzliya/Ra'anana/Kfar Saba, Petah Tikva/Rosh HaAyin, Netanya,
+  Rehovot, Modi'in, Airport City, Yehud and Lod.
 - `related` is stored and tracked but does not generate an immediate email.
 - `excluded` is counted with reasons but is not stored as a relevant job.
 
